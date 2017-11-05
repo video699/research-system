@@ -1,0 +1,3 @@
+[submodule "dataset"]
+	path = dataset
+	url = git@gitlab.fi.muni.cz:xnovot32/fi-muni-video-699.git
