@@ -87,7 +87,8 @@ class Task1Model(object):
 
         Parameters:
             observations    The provided list of observations in the form of 2-tuples, where each
-                            tuple consists of a screen and a list of document pages.
+                            tuple consists of a screen and a list of all document pages attached to
+                            the screen's video.
             ground_truth    The provided list of relevance judgements in the form of lists, where
                             each list corresponds to a single observed screen and each list element
                             is a boolean value that corresponds to a single document page.
