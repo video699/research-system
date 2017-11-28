@@ -4,3 +4,4 @@
 
 DATASET_DIRNAME = "dataset"
 LOG_FILENAME = "__main__.log"
+RESULT_DIRNAME = "results"

@@ -58,6 +58,11 @@ class Wrapper(Task1SubtaskBModel):
         return self.classifier.predict([[sorted(ranking, reverse=True)[0]] \
                                         for ranking in predictions])
 
+    def _filename(self):
+        return "%s.%s.%s-%s__%s" % (super(Wrapper, self)._filename(), __name__,
+                                    self.__class__.__name__, self.classifier.__class__.__name__,
+                                    self.subtaska_model._filename())
+
     def __repr__(self):
         wrapper_type = "Supervised" if self.is_supervised else "Unsupervised"
         return "%s wrapper (%s, %s)" % (wrapper_type, self.classifier.__class__.__name__,

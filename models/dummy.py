@@ -17,6 +17,10 @@ class BestTask1SubtaskAModel(Task1SubtaskAModel):
             ranking = [(1.0 if page in screen.matching_pages else 0.0) for page in pages]
             yield ranking
 
+    def _filename(self):
+        return "%s.%s.%s" % (super(BestTask1SubtaskAModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
+
     def __repr__(self):
         return "(Best)"
 
@@ -28,6 +32,10 @@ class BestTask1SubtaskBModel(Task1SubtaskBModel):
     def predict(self, observations):
         for screen, pages in observations:
             yield any(page in screen.matching_pages for page in pages)
+
+    def _filename(self):
+        return "%s.%s.%s" % (super(BestTask1SubtaskBModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
 
     def __repr__(self):
         return "(Best)"
@@ -42,6 +50,10 @@ class WorstTask1SubtaskAModel(Task1SubtaskAModel):
             ranking = [(0.0 if page in screen.matching_pages else 1.0) for page in pages]
             yield ranking
 
+    def _filename(self):
+        return "%s.%s.%s" % (super(WorstTask1SubtaskAModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
+
     def __repr__(self):
         return "(Worst)"
 
@@ -53,6 +65,10 @@ class WorstTask1SubtaskBModel(Task1SubtaskBModel):
     def predict(self, observations):
         for screen, pages in observations:
             yield all(page not in screen.matching_pages for page in pages)
+
+    def _filename(self):
+        return "%s.%s.%s" % (super(WorstTask1SubtaskBModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
 
     def __repr__(self):
         return "(Worst)"
@@ -66,6 +82,10 @@ class RandomTask1SubtaskAModel(Task1SubtaskAModel):
             ranking = [(random(), page) for page in pages]
             yield ranking
 
+    def _filename(self):
+        return "%s.%s.%s" % (super(RandomTask1SubtaskAModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
+
     def __repr__(self):
         return "(Random)"
 
@@ -76,6 +96,10 @@ class RandomTask1SubtaskBModel(Task1SubtaskBModel):
     def predict(self, observations):
         for _, __ in observations:
             yield randint(0, 1)
+
+    def _filename(self):
+        return "%s.%s.%s" % (super(RandomTask1SubtaskBModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
 
     def __repr__(self):
         return "(Random)"
@@ -88,6 +112,10 @@ class ConservativeModel(Task1SubtaskBModel):
     def predict(self, observations):
         for _, __ in observations:
             yield True
+
+    def _filename(self):
+        return "%s.%s.%s" % (super(ConservativeModel, self)._filename(), __name__, \
+                             self.__class__.__name__)
 
     def __repr__(self):
         return "(Conservative)"

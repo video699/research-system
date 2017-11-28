@@ -41,6 +41,10 @@ class VGG256Model(Task1SubtaskAModel):
                                 screen_vgg256[self.dataset_index]) for page in pages]
             yield ranking
 
+    def _filename(self):
+        return "%s.%s.%s-%s-%s" % (super(VGG256Model, self)._filename(), __name__, \
+                                   self.__class__.__name__, self.vgg_datasets, self.is_handycapped)
+
     def __repr__(self):
         return "VGG256 (%s, %shandycapped)" % (self.vgg_datasets,
                                                "" if self.is_handycapped else "not ")

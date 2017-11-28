@@ -3,14 +3,15 @@
     functions invoked by the individual multiprocessing workers.
 """
 
+from pickle import load, dump
 import random
+
+from filenames import RESULT_DIRNAME
 
 from numpy import mean, percentile
 from sklearn.metrics import zero_one_loss
 
 RANDOM_STATE = 12345
-TASK1_SUBTASKB_FALSE_POSITIVE_WEIGHT = 9
-TASK1_SUBTASKB_FALSE_NEGATIVE_WEIGHT = 1
 
 def evaluate_task1_subtaska_worker(args):
     """Evaluates the provided task 1, subtask A model and returns the average rank of the matching
@@ -20,34 +21,42 @@ def evaluate_task1_subtaska_worker(args):
         args    A 2-tuple containing the model itself and another 2-tuple containing the task 1
                 dataset and its k-fold split.
     """
-    random.seed(RANDOM_STATE)
     model, (dataset, split) = args
-    average_ranks = []
-    for train_index, test_index in split:
-        # Perform nested training.
-        train_screens = dataset[train_index]
-        train_pages = [screen.video.pages for screen in train_screens]
-        train_observations = list(zip(train_screens, train_pages))
-        train_ground_truth = [[page in screen.matching_pages for page in pages] \
-                               for screen, pages in train_observations]
-        model.fit(train_observations, train_ground_truth)
-        # Perform nested testing.
-        test_screens = dataset[test_index]
-        test_pages = [screen.video.pages for screen in test_screens]
-        test_observations = list(zip(test_screens, test_pages))
-        test_ground_truth = [[page in screen.matching_pages for page in pages] \
-                              for screen, pages in test_observations]
-        predictions = model.predict(test_observations)
-        ranks = []
-        for relevance_judgements, ranking in zip(test_ground_truth, predictions):
-            if not any(relevance_judgements):
-                # There is no document page matching the screen.
-                continue
-            ranked_relevance_judgements, _ = zip(*sorted(zip(relevance_judgements, ranking),
-                                                         reverse=True, key=lambda x: x[1]))
-            ranks.append(ranked_relevance_judgements.index(True))
-        average_ranks.append(mean(ranks))
-    return CrossValidationResult(model, average_ranks)
+    result_filename = "%s/%s.pkl" % (RESULT_DIRNAME, model._filename())
+    try:
+        with open(result_filename, "rb") as f:
+            result = load(f)
+    except FileNotFoundError:
+        random.seed(RANDOM_STATE)
+        average_ranks = []
+        for train_index, test_index in split:
+            # Perform nested training.
+            train_screens = dataset[train_index]
+            train_pages = [screen.video.pages for screen in train_screens]
+            train_observations = list(zip(train_screens, train_pages))
+            train_ground_truth = [[page in screen.matching_pages for page in pages] \
+                                   for screen, pages in train_observations]
+            model.fit(train_observations, train_ground_truth)
+            # Perform nested testing.
+            test_screens = dataset[test_index]
+            test_pages = [screen.video.pages for screen in test_screens]
+            test_observations = list(zip(test_screens, test_pages))
+            test_ground_truth = [[page in screen.matching_pages for page in pages] \
+                                  for screen, pages in test_observations]
+            predictions = model.predict(test_observations)
+            ranks = []
+            for relevance_judgements, ranking in zip(test_ground_truth, predictions):
+                if not any(relevance_judgements):
+                    # There is no document page matching the screen.
+                    continue
+                ranked_relevance_judgements, _ = zip(*sorted(zip(relevance_judgements, ranking),
+                                                             reverse=True, key=lambda x: x[1]))
+                ranks.append(ranked_relevance_judgements.index(True))
+            average_ranks.append(mean(ranks))
+        result = CrossValidationResult(model, average_ranks)
+        with open(result_filename, "wb") as f:
+            dump(result, f)
+    return result
 
 def evaluate_task1_subtaskb_worker(args):
     """Evaluates the provided task 1, subtask B model and returns the average rank of the matching
@@ -57,29 +66,37 @@ def evaluate_task1_subtaskb_worker(args):
         args    A 2-tuple containing the model itself and another 2-tuple containing the task 1
                 dataset and its k-fold split.
     """
-    random.seed(RANDOM_STATE)
     model, (dataset, split) = args
-    losses = []
-    for train_index, test_index in split:
-        # Perform nested training.
-        train_screens = dataset[train_index]
-        train_pages = [screen.video.pages for screen in train_screens]
-        train_observations = list(zip(train_screens, train_pages))
-        train_ground_truth = [[page in screen.matching_pages for page in pages] \
-                               for screen, pages in train_observations]
-        model.fit(train_observations, train_ground_truth)
-        # Perform nested testing.
-        test_screens = dataset[test_index]
-        test_pages = [screen.video.pages for screen in test_screens]
-        test_observations = list(zip(test_screens, test_pages))
-        test_ground_truth = [[page in screen.matching_pages for page in pages] \
-                              for screen, pages in test_observations]
-        predictions = model.predict(test_observations)
-        loss = zero_one_loss([1 if any(relevance_judgements) else 0 \
-                              for relevance_judgements in test_ground_truth],
-                             [1 if cls else 0 for cls in predictions])
-        losses.append(loss)
-    return CrossValidationResult(model, losses)
+    result_filename = "%s/%s.pkl" % (RESULT_DIRNAME, model._filename())
+    try:
+        with open(result_filename, "rb") as f:
+            result = load(f)
+    except FileNotFoundError:
+        random.seed(RANDOM_STATE)
+        losses = []
+        for train_index, test_index in split:
+            # Perform nested training.
+            train_screens = dataset[train_index]
+            train_pages = [screen.video.pages for screen in train_screens]
+            train_observations = list(zip(train_screens, train_pages))
+            train_ground_truth = [[page in screen.matching_pages for page in pages] \
+                                   for screen, pages in train_observations]
+            model.fit(train_observations, train_ground_truth)
+            # Perform nested testing.
+            test_screens = dataset[test_index]
+            test_pages = [screen.video.pages for screen in test_screens]
+            test_observations = list(zip(test_screens, test_pages))
+            test_ground_truth = [[page in screen.matching_pages for page in pages] \
+                                  for screen, pages in test_observations]
+            predictions = model.predict(test_observations)
+            loss = zero_one_loss([1 if any(relevance_judgements) else 0 \
+                                  for relevance_judgements in test_ground_truth],
+                                 [1 if cls else 0 for cls in predictions])
+            losses.append(loss)
+        result = CrossValidationResult(model, losses)
+        with open(result_filename, "wb") as f:
+            dump(result, f)
+    return result
 
 class Task1Model(object):
     def fit(self, observations, ground_truth):
@@ -100,6 +117,10 @@ class Task1Model(object):
         """
         pass
 
+    def _filename(self):
+        """Returns the filename that serves as a basename to store data related to this model."""
+        return "task1"
+
 class Task1SubtaskAModel(Task1Model):
     """ This mixin represents a task 1, subtask A model."""
     def predict(self, observations):
@@ -112,6 +133,9 @@ class Task1SubtaskAModel(Task1Model):
         """
         raise NotImplementedError()
 
+    def _filename(self):
+        return "%s-subtaska" % super(Task1SubtaskAModel, self)._filename()
+
 class Task1SubtaskBModel(Task1Model):
     """ This mixin represents a task 1, subtask B model."""
     def predict(self, observations):
@@ -123,6 +147,9 @@ class Task1SubtaskBModel(Task1Model):
                             a list of document pages.
         """
         raise NotImplementedError()
+
+    def _filename(self):
+        return "%s-subtaskb" % super(Task1SubtaskBModel, self)._filename()
 
 class CrossValidationResult(object):
     """ This class represents a cross-validation result. """
