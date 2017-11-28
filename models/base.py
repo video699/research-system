@@ -30,27 +30,19 @@ def evaluate_task1_subtaska_worker(args):
         random.seed(RANDOM_STATE)
         average_ranks = []
         for train_index, test_index in split:
-            # Perform nested training.
-            train_screens = dataset[train_index]
-            train_pages = [screen.video.pages for screen in train_screens]
-            train_observations = list(zip(train_screens, train_pages))
-            train_ground_truth = [[page in screen.matching_pages for page in pages] \
-                                   for screen, pages in train_observations]
-            model.fit(train_observations, train_ground_truth)
-            # Perform nested testing.
-            test_screens = dataset[test_index]
-            test_pages = [screen.video.pages for screen in test_screens]
-            test_observations = list(zip(test_screens, test_pages))
-            test_ground_truth = [[page in screen.matching_pages for page in pages] \
-                                  for screen, pages in test_observations]
-            predictions = model.predict(test_observations)
+            train_videos = dataset[train_index]
+            model.fit(train_videos)
+            test_videos = dataset[test_index]
+            test_screens = [screen for video in test_videos for screen in video.screens]
+            predictions = model.predict(test_videos)
             ranks = []
-            for relevance_judgements, ranking in zip(test_ground_truth, predictions):
-                if not any(relevance_judgements):
-                    # There is no document page matching the screen.
+            for screen, ranking in zip(test_screens, predictions):
+                if not screen.matching_pages:
                     continue
-                ranked_relevance_judgements, _ = zip(*sorted(zip(relevance_judgements, ranking),
-                                                             reverse=True, key=lambda x: x[1]))
+                relevance_judgements = (page in screen.matching_pages \
+                                        for page in screen.video.pages)
+                _, ranked_relevance_judgements = zip(*sorted(zip(ranking, relevance_judgements),
+                                                             reverse=True))
                 ranks.append(ranked_relevance_judgements.index(True))
             average_ranks.append(mean(ranks))
         result = CrossValidationResult(model, average_ranks)
@@ -75,22 +67,13 @@ def evaluate_task1_subtaskb_worker(args):
         random.seed(RANDOM_STATE)
         losses = []
         for train_index, test_index in split:
-            # Perform nested training.
-            train_screens = dataset[train_index]
-            train_pages = [screen.video.pages for screen in train_screens]
-            train_observations = list(zip(train_screens, train_pages))
-            train_ground_truth = [[page in screen.matching_pages for page in pages] \
-                                   for screen, pages in train_observations]
-            model.fit(train_observations, train_ground_truth)
-            # Perform nested testing.
-            test_screens = dataset[test_index]
-            test_pages = [screen.video.pages for screen in test_screens]
-            test_observations = list(zip(test_screens, test_pages))
-            test_ground_truth = [[page in screen.matching_pages for page in pages] \
-                                  for screen, pages in test_observations]
-            predictions = model.predict(test_observations)
-            loss = zero_one_loss([1 if any(relevance_judgements) else 0 \
-                                  for relevance_judgements in test_ground_truth],
+            train_videos = dataset[train_index]
+            model.fit(train_videos)
+            test_videos = dataset[test_index]
+            test_screens = [screen for video in test_videos for screen in video.screens]
+            predictions = model.predict(test_videos)
+            loss = zero_one_loss([1 if screen.matching_pages else 0 \
+                                  for screen in test_screens],
                                  [1 if cls else 0 for cls in predictions])
             losses.append(loss)
         result = CrossValidationResult(model, losses)
@@ -99,21 +82,11 @@ def evaluate_task1_subtaskb_worker(args):
     return result
 
 class Task1Model(object):
-    def fit(self, observations, ground_truth):
-        """Trains the model using the provided screens and document pages and a ground truth.
+    def fit(self, videos):
+        """Trains the model using the provided videos.
 
         Parameters:
-            observations    The provided list of observations in the form of 2-tuples, where each
-                            tuple consists of a screen and a list of all document pages attached to
-                            the screen's video.
-            ground_truth    The provided list of relevance judgements in the form of lists, where
-                            each list corresponds to a single observed screen and each list element
-                            is a boolean value that corresponds to a single document page.
-
-                            In the case of a subtask A model, these relevance judgements directly
-                            correspond to the model's predictions. In the case of a subtask B
-                            model, the model is expected to predict True if there is any matching
-                            page, e.g. is there is any value True in a given list.
+            videos          The provided list of videos.
         """
         pass
 
@@ -123,13 +96,13 @@ class Task1Model(object):
 
 class Task1SubtaskAModel(Task1Model):
     """ This mixin represents a task 1, subtask A model."""
-    def predict(self, observations):
-        """Predicts the rankings of the provided document pages based on their similarity to
-        provided screens and returns the predicted rankings as an iterable.
+    def predict(self, videos):
+        """For each screen in the provided videos, predicts the ranking of the document pages
+           attached to the video based on their similarity to the screen and returns the predicted
+           rankings as an iterable.
 
         Parameters:
-            observations    The provided list of 2-tuples, where each tuple consists of a screen and
-                            a list of document pages.
+            videos          The provided list of videos.
         """
         raise NotImplementedError()
 
@@ -138,13 +111,13 @@ class Task1SubtaskAModel(Task1Model):
 
 class Task1SubtaskBModel(Task1Model):
     """ This mixin represents a task 1, subtask B model."""
-    def predict(self, observations):
-        """Predicts whether provided screens display any of the provided document pages and returns
-        the predictions as an iterable of truthy and falsy values.
+    def predict(self, videos):
+        """For each screen in the provided videos, predicts whether any of the document pages
+           attached to the video match the screen and returns the prediction as an iterable of
+           truthy and falsy values.
 
         Parameters:
-            observations    The provided list of 2-tuples, where each tuple consists of a screen and
-                            a list of document pages.
+            videos          The provided list of videos.
         """
         raise NotImplementedError()
 
@@ -178,5 +151,5 @@ class CrossValidationResult(object):
 
     def __repr__(self):
         interval = self.confidence_interval()
-        return "%s:\tCI: [%0.10f, %0.10f], mean: %10f" % (self.author, interval[0], interval[1],
-                                                          self.mean)
+        return "%s:\tCI: [%0.10f, %0.10f], mean: %0.10f" % (self.author, interval[0], interval[1],
+                                                            self.mean)

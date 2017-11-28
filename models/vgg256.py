@@ -34,12 +34,14 @@ class VGG256Model(Task1SubtaskAModel):
         assert type(be_handycapped) is bool
         self.is_handycapped = be_handycapped
 
-    def predict(self, observations):
-        for screen, pages in observations:
-            screen_vgg256 = screen.frame.vgg256 if self.is_handycapped else screen.vgg256
-            ranking = [1-cosine(page.vgg256[self.dataset_index],
-                                screen_vgg256[self.dataset_index]) for page in pages]
-            yield ranking
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for screen in video.screens:
+                screen_vgg256 = screen.frame.vgg256 if self.is_handycapped else screen.vgg256
+                ranking = [1-cosine(page.vgg256[self.dataset_index],
+                                    screen_vgg256[self.dataset_index]) for page in pages]
+                yield ranking
 
     def _filename(self):
         return "%s.%s.%s-%s-%s" % (super(VGG256Model, self)._filename(), __name__, \

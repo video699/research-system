@@ -36,25 +36,24 @@ class Wrapper(Task1SubtaskBModel):
         assert isinstance(classifier, ClassifierMixin)
         self.classifier = classifier
 
-    def fit(self, observations, ground_truth):
+    def fit(self, videos):
         if self.is_supervised:
-            tune_observations = observations[:len(observations)//2]
-            tune_ground_truth = ground_truth[:len(ground_truth)//2]
-            self.subtaska_model.fit(tune_observations, tune_ground_truth)
-            train_observations = observations[len(observations)//2:]
-            train_ground_truth = ground_truth[len(ground_truth)//2:]
+            tune_videos = videos[:len(videos)//2]
+            self.subtaska_model.fit(tune_videos)
+            train_videos = videos[len(observations)//2:]
         else:
-            train_observations = observations
-            train_ground_truth = ground_truth
-        predictions = self.subtaska_model.predict(train_observations)
+            train_videos = videos
+        predictions = self.subtaska_model.predict(train_videos)
         X, Y = [], []
-        for ranking, relevance_judgements in zip(predictions, train_ground_truth):
-            X.append([sorted(ranking, reverse=True)[0]])
-            Y.append(1 if any(relevance_judgements) else 0)
+        for video in train_videos:
+            pages = video.pages
+            for ranking, screen in zip(predictions, video.screens):
+                X.append([sorted(ranking, reverse=True)[0]])
+                Y.append(1 if screen.matching_pages else 0)
         self.classifier.fit(X, Y)
 
-    def predict(self, observations):
-        predictions = self.subtaska_model.predict(observations)
+    def predict(self, videos):
+        predictions = self.subtaska_model.predict(videos)
         return self.classifier.predict([[sorted(ranking, reverse=True)[0]] \
                                         for ranking in predictions])
 

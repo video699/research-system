@@ -12,10 +12,12 @@ class BestTask1SubtaskAModel(Task1SubtaskAModel):
         This class represents a task 1, subtask A model that cheats to obtain the best
         possible results.
     """
-    def predict(self, observations):
-        for screen, pages in observations:
-            ranking = [(1.0 if page in screen.matching_pages else 0.0) for page in pages]
-            yield ranking
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for screen in video.screens:
+                ranking = [(1.0 if page in screen.matching_pages else 0.0) for page in pages]
+                yield ranking
 
     def _filename(self):
         return "%s.%s.%s" % (super(BestTask1SubtaskAModel, self)._filename(), __name__, \
@@ -29,9 +31,11 @@ class BestTask1SubtaskBModel(Task1SubtaskBModel):
         This class represents a task 1, subtask B model that cheats to obtain the best
         possible results.
     """
-    def predict(self, observations):
-        for screen, pages in observations:
-            yield any(page in screen.matching_pages for page in pages)
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for screen in video.screens:
+                yield any(page in screen.matching_pages for page in pages)
 
     def _filename(self):
         return "%s.%s.%s" % (super(BestTask1SubtaskBModel, self)._filename(), __name__, \
@@ -45,10 +49,12 @@ class WorstTask1SubtaskAModel(Task1SubtaskAModel):
         This class represents a task 1, subtask A model that cheats to obtain the worst
         possible results.
     """
-    def predict(self, observations):
-        for screen, pages in observations:
-            ranking = [(0.0 if page in screen.matching_pages else 1.0) for page in pages]
-            yield ranking
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for screen in video.screens:
+                ranking = [(0.0 if page in screen.matching_pages else 1.0) for page in pages]
+                yield ranking
 
     def _filename(self):
         return "%s.%s.%s" % (super(WorstTask1SubtaskAModel, self)._filename(), __name__, \
@@ -62,9 +68,11 @@ class WorstTask1SubtaskBModel(Task1SubtaskBModel):
         This class represents a task 1, subtask B model that cheats to obtain the worst
         possible results.
     """
-    def predict(self, observations):
-        for screen, pages in observations:
-            yield all(page not in screen.matching_pages for page in pages)
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for screen in video.screens:
+                yield all(page not in screen.matching_pages for page in pages)
 
     def _filename(self):
         return "%s.%s.%s" % (super(WorstTask1SubtaskBModel, self)._filename(), __name__, \
@@ -77,10 +85,12 @@ class RandomTask1SubtaskAModel(Task1SubtaskAModel):
     """
         This class represents a task 1, subtask A model that picks results at random.
     """
-    def predict(self, observations):
-        for _, pages in observations:
-            ranking = [(random(), page) for page in pages]
-            yield ranking
+    def predict(self, videos):
+        for video in videos:
+            pages = video.pages
+            for _ in video.screens:
+                ranking = [(random(), page) for page in pages]
+                yield ranking
 
     def _filename(self):
         return "%s.%s.%s" % (super(RandomTask1SubtaskAModel, self)._filename(), __name__, \
@@ -93,9 +103,10 @@ class RandomTask1SubtaskBModel(Task1SubtaskBModel):
     """
         This class represents a task 1, subtask B model that picks results at random.
     """
-    def predict(self, observations):
-        for _, __ in observations:
-            yield randint(0, 1)
+    def predict(self, videos):
+        for video in videos:
+            for _ in video.screens:
+                yield randint(0, 1)
 
     def _filename(self):
         return "%s.%s.%s" % (super(RandomTask1SubtaskBModel, self)._filename(), __name__, \
@@ -109,9 +120,10 @@ class ConservativeModel(Task1SubtaskBModel):
         This class represents a task 1, subtask B model that marks all screens as matchable,
         since wrongly marking a screen as non-matchable is costly in terms of the evaluation metric.
     """
-    def predict(self, observations):
-        for _, __ in observations:
-            yield True
+    def predict(self, videos):
+        for video in videos:
+            for _ in video.screens:
+                yield True
 
     def _filename(self):
         return "%s.%s.%s" % (super(ConservativeModel, self)._filename(), __name__, \
