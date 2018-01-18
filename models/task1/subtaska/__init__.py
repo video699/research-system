@@ -1,0 +1,16 @@
+"""
+    This module provides the task1, subtask A models.
+"""
+
+from .base import Model
+from .dummy import BEST, WORST, RANDOM
+from .histograms import ROW_HEIGHTS, ROW_ALTITUDES, GRAYSCALE_HISTOGRAMS, FEATURE_VECTORS
+from .classifiers import FEATURE_VECTOR_CLASSIFIERS
+from .row_numbers import ROW_NUMBERS
+from .vgg256 import VGGS256
+
+DUMMY = [BEST, WORST, RANDOM]
+HISTOGRAMS = ROW_HEIGHTS + ROW_ALTITUDES + GRAYSCALE_HISTOGRAMS + FEATURE_VECTORS
+CLASSIFIERS = FEATURE_VECTOR_CLASSIFIERS
+
+MODELS = DUMMY + VGGS256 + ROW_NUMBERS + HISTOGRAMS + CLASSIFIERS
