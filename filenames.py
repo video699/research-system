@@ -4,4 +4,7 @@
 
 DATASET_DIRNAME = "dataset"
 LOG_FILENAME = "__main__.log"
-RESULT_DIRNAME = "results"
+RESULTS_DIRNAME = "results"
+CACHES_DIRNAME = "caches"
+IMAGE_CACHES_FILENAME = "%s/images" % CACHES_DIRNAME
+FEATURE_CACHES_FILENAME = "%s/features" % CACHES_DIRNAME
